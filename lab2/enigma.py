@@ -150,7 +150,7 @@ def read_rotor_from_file(filename):
             for line in f:
                 data.append([chr(int(x)) for x in line.split()])
     except:
-        print('No such rotor file')
+        print('Файл не существует')
         exit()
     return data[0]
 
@@ -186,7 +186,7 @@ def main():
         try:
             file_read = open(namespace.input, 'rb')
         except:
-            print('No such file')
+            print('Файл не существует')
             exit()
         file_write = open(namespace.output, 'wb')
         while True:
