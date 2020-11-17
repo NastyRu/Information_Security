@@ -50,6 +50,7 @@ rcon = [[0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36],
 
 def create_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-t', '--type', choices=['enc', 'dec'], default='enc', help='type of aes')
     parser.add_argument('-i', '--input', help='file of input message', required=True)
     parser.add_argument('-o', '--output', help='file of output message', required=True)
     parser.add_argument('-k', '--key', help='key for aes', required=True)
@@ -114,7 +115,7 @@ def mul_by_0e(num):
     return mul_by_02(mul_by_02(mul_by_02(num))) ^ mul_by_02(mul_by_02(num)) ^ mul_by_02(num)
 
 
-def mix_coluns(state, decode=False):
+def mix_columns(state, decode=False):
     for i in range(4):
         if (decode):
             s0 = mul_by_0e(state[0][i]) ^ mul_by_0b(state[1][i]) ^\
@@ -193,7 +194,7 @@ def encode(state_arr, key_arr):
         key_n = key_table[:, i*4:i*4+4]
         state = sub_bytes(state)
         state = shift_rows(state)
-        state = mix_coluns(state)
+        state = mix_columns(state)
         state = add_round_key(state, key_n)
 
     i = 10
@@ -230,7 +231,7 @@ def decode(state_arr, key_arr):
         state = shift_rows(state, decode=True)
         state = sub_bytes(state, decode=True)
         state = add_round_key(state, key_n)
-        state = mix_coluns(state, decode=True)
+        state = mix_columns(state, decode=True)
 
     i = 0
     key_n = key_table[:, i*4:i*4+4]
@@ -245,9 +246,8 @@ def decode(state_arr, key_arr):
 def main():
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
-
-    print(namespace.key)
     code = bytes(namespace.key, 'utf-8')
+
     try:
         file_read = open(namespace.input, 'rb')
     except:
@@ -258,21 +258,10 @@ def main():
         char = file_read.read(16)
         if not char:
             break
-        tbl = encode(char, code)
-        for j in range(4):
-            for i in range(4):
-                file_write.write(pack("B", tbl[i][j]))
-    file_read.close()
-    file_write.close()
-
-    file_read = open('new_file.txt', 'rb')
-    file_write = open('n_file.txt', 'wb')
-    while True:
-        char = file_read.read(16)
-        if not char:
-            break
-
-        tbl = decode(char, code)
+        if (namespace.type == 'enc'):
+            tbl = encode(char, code)
+        else:
+            tbl = decode(char, code)
         for j in range(4):
             for i in range(4):
                 file_write.write(pack("B", tbl[i][j]))
