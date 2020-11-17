@@ -1,3 +1,4 @@
+import sys
 import argparse
 from struct import pack
 import numpy
@@ -49,9 +50,9 @@ rcon = [[0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36],
 
 def create_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--type', choices=['file', 'string'], default='string', help='type of input')
-    parser.add_argument('-i', '--input', help='file of input message')
-    parser.add_argument('-o', '--output', help='file of output message')
+    parser.add_argument('-i', '--input', help='file of input message', required=True)
+    parser.add_argument('-o', '--output', help='file of output message', required=True)
+    parser.add_argument('-k', '--key', help='key for aes', required=True)
 
     return parser
 
@@ -171,10 +172,13 @@ def encode(state_arr, key_arr):
     state = [[0] * 4 for i in range(4)]
     key = [[0] * 4 for i in range(4)]
 
+    if (len(key_arr) < 16):
+        for i in range(len(key_arr), 16):
+            key_arr += b'\x00'
+
     if (len(state_arr) < 16):
         for i in range(len(state_arr), 16):
             state_arr += b'\x00'
-            key_arr += b'\x00'
 
     for i in range(4):
         for j in range(4):
@@ -205,10 +209,13 @@ def decode(state_arr, key_arr):
     state = [[0] * 4 for i in range(4)]
     key = [[0] * 4 for i in range(4)]
 
+    if (len(key_arr) < 16):
+        for i in range(len(key_arr), 16):
+            key_arr += b'\x00'
+
     if (len(state_arr) < 16):
         for i in range(len(state_arr), 16):
             state_arr += b'\x00'
-            key_arr += b'\x00'
 
     for i in range(4):
         for j in range(4):
@@ -236,42 +243,17 @@ def decode(state_arr, key_arr):
 
 
 def main():
-    '''parser = create_parser()
+    parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
 
-    if (namespace.type == 'file'):
-        try:
-            file_read = open(namespace.input, 'rb')
-        except:
-            print('Файл не существует')
-            exit()
-        file_write = open(namespace.output, 'wb')
-        while True:
-            char = file_read.read(128)
-            if not char:
-                break
-            new_char = aes()
-            file_write.write(new_char)
-        file_read.close()
-        file_write.close()
-    else:
-        print("Введите строку для шифрования:")
-        str = input()
-        bstr = b""
-        for sym in str:
-            bstr += pack("B", ord(sym))
-        new_bstr = aes()
-        new_str = ""
-        for sym in new_bstr:
-            new_str += chr(sym)
-        print(new_str)'''
-
-    file_read = open('file.txt', 'rb')
-    code = file_read.read(16)
-    file_read.close()
-
-    file_read = open('file.txt', 'rb')
-    file_write = open('new_file.txt', 'wb')
+    print(namespace.key)
+    code = bytes(namespace.key, 'utf-8')
+    try:
+        file_read = open(namespace.input, 'rb')
+    except:
+        print('Файл не существует')
+        exit()
+    file_write = open(namespace.output, 'wb')
     while True:
         char = file_read.read(16)
         if not char:
