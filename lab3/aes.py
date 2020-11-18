@@ -178,6 +178,7 @@ def encode(state_arr, key_arr):
             key_arr += b'\x00'
 
     if (len(state_arr) < 16):
+        state_arr += b'\xff'
         for i in range(len(state_arr), 16):
             state_arr += b'\x00'
 
@@ -213,10 +214,6 @@ def decode(state_arr, key_arr):
     if (len(key_arr) < 16):
         for i in range(len(key_arr), 16):
             key_arr += b'\x00'
-
-    if (len(state_arr) < 16):
-        for i in range(len(state_arr), 16):
-            state_arr += b'\x00'
 
     for i in range(4):
         for j in range(4):
@@ -254,17 +251,39 @@ def main():
         print('Файл не существует')
         exit()
     file_write = open(namespace.output, 'wb')
-    while True:
-        char = file_read.read(16)
-        if not char:
-            break
-        if (namespace.type == 'enc'):
+
+    if (namespace.type == 'enc'):
+        i = 0
+        while True:
+            char = file_read.read(16)
             tbl = encode(char, code)
-        else:
+            for j in range(4):
+                for i in range(4):
+                    file_write.write(pack("B", tbl[i][j]))
+            if not char:
+                break
+            if len(char) < 16:
+                break
+    else:
+        char = file_read.read(16)
+        while True:
             tbl = decode(char, code)
-        for j in range(4):
-            for i in range(4):
-                file_write.write(pack("B", tbl[i][j]))
+            new_str = b""
+            for j in range(4):
+                for i in range(4):
+                    new_str += pack("B", tbl[i][j])
+
+            char = file_read.read(16)
+            if not char:
+                i = len(new_str) - 1
+                while (new_str[i] != 255):
+                    i -= 1
+                if i != 0:
+                    new_str = new_str[:i]
+                    file_write.write(new_str)
+                break
+            file_write.write(new_str)
+
     file_read.close()
     file_write.close()
 
