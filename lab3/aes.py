@@ -144,7 +144,7 @@ def mix_columns(state, decode=False):
     return state
 
 
-def add_round_key(state, key):
+def xor_with_key(state, key):
     for i in range(4):
         for j in range(4):
             state[i][j] ^= key[i][j]
@@ -188,20 +188,20 @@ def encode(state_arr, key_arr):
 
     key_table = generate_key(key)
 
-    state = add_round_key(state, key_table[:, 0:4])
+    state = xor_with_key(state, key_table[:, 0:4])
 
     for i in range(1, 10):
         key_n = key_table[:, i*4:i*4+4]
         state = sub_bytes(state)
         state = shift_rows(state)
         state = mix_columns(state)
-        state = add_round_key(state, key_n)
+        state = xor_with_key(state, key_n)
 
     i = 10
     key_n = key_table[:, i*4:i*4+4]
     state = sub_bytes(state)
     state = shift_rows(state)
-    state = add_round_key(state, key_n)
+    state = xor_with_key(state, key_n)
 
     return state
 
@@ -224,13 +224,13 @@ def decode(state_arr, key_arr):
             key[i][j] = key_arr[i + 4 * j]
 
     key_table = generate_key(key)
-    state = add_round_key(state, key_table[:, 10*4:10*4+4])
+    state = xor_with_key(state, key_table[:, 10*4:10*4+4])
 
     for i in range(9, 0, -1):
         key_n = key_table[:, i*4:i*4+4]
         state = shift_rows(state, decode=True)
         state = sub_bytes(state, decode=True)
-        state = add_round_key(state, key_n)
+        state = xor_with_key(state, key_n)
         state = mix_columns(state, decode=True)
 
     i = 0
@@ -238,7 +238,7 @@ def decode(state_arr, key_arr):
 
     state = shift_rows(state, decode=True)
     state = sub_bytes(state, decode=True)
-    state = add_round_key(state, key_n)
+    state = xor_with_key(state, key_n)
 
     return state
 
